@@ -57,8 +57,7 @@ export default function CanvasClient({ agent }: { agent: any }) {
                 id: "webchat", 
                 mode: "webchat", 
                 version: "1.0.0", 
-                platform: navigator.userAgent.substring(0, 100), 
-                name: "Anima UI" 
+                platform: navigator.userAgent.substring(0, 50) 
               },
               auth: { token: token }
             },

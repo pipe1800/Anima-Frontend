@@ -59,10 +59,8 @@ export default function CanvasClient({ agent }: { agent: any }) {
                 version: "1.0.0", 
                 platform: navigator.userAgent.substring(0, 50) 
               },
-              auth: { 
-                token: token,
-                scopes: ["operator.admin", "operator.read", "operator.write"] // Scopes belong inside auth
-              }
+              auth: { token: token },
+              scopes: ["operator.admin", "operator.read", "operator.write"] // Scopes belong at the root of params, outside auth
             },
             id: crypto.randomUUID()
           }));

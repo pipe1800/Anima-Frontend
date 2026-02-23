@@ -6,26 +6,32 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
-export default function LoginPage() {
+export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const supabase = createClient();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          full_name: fullName,
+        },
+      },
     });
 
-    if (signInError) {
-      setError(signInError.message);
+    if (signUpError) {
+      setError(signUpError.message);
       setLoading(false);
     } else {
       router.push("/dashboard");
@@ -34,7 +40,6 @@ export default function LoginPage() {
   };
 
   const handleOAuth = async (provider: 'google' | 'discord') => {
-    const supabase = createClient();
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -60,27 +65,25 @@ export default function LoginPage() {
           <div className="w-24 h-24 mb-8">
             <Image src="/anima-logo.svg" alt="Anima Logo" width={96} height={96} className="w-full h-full object-contain drop-shadow-[0_0_20px_rgba(245,158,11,0.6)]" />
           </div>
-          <h2 className="text-5xl font-black tracking-tight mb-6">Command.<br/>Control.<br/>Create.</h2>
-          <p className="text-white/60 text-lg font-light max-w-sm leading-relaxed">Access your zero-liability agent command center and orchestrate the future.</p>
+          <h2 className="text-5xl font-black tracking-tight mb-6">Build.<br/>Command.<br/>Dominate.</h2>
+          <p className="text-white/60 text-lg font-light max-w-sm leading-relaxed">Join Anima and build the ultimate command center for your local agents.</p>
         </div>
       </div>
 
       {/* Right Side - Form Panel */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-8 relative">
-        {/* Back Link */}
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-8 relative overflow-y-auto">
         <Link href="/" className="absolute top-8 left-8 text-sm font-medium text-white/40 hover:text-white transition-colors flex items-center gap-2 group">
           <span className="transition-transform group-hover:-translate-x-1">&larr;</span> Back to Home
         </Link>
 
-        <div className="w-full max-w-[400px] flex flex-col">
-          {/* Mobile Logo */}
+        <div className="w-full max-w-[400px] flex flex-col py-10">
           <div className="lg:hidden flex justify-center mb-10">
             <Image src="/anima-logo.svg" alt="Anima Logo" width={56} height={56} className="drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]" />
           </div>
           
           <div className="mb-10 text-center lg:text-left">
-            <h1 className="text-4xl font-black tracking-tight mb-3">Welcome back</h1>
-            <p className="text-white/50">Log in to your Anima dashboard.</p>
+            <h1 className="text-4xl font-black tracking-tight mb-3">Create an account</h1>
+            <p className="text-white/50">Start configuring your zero-liability workspace.</p>
           </div>
 
           <div className="flex gap-4 mb-6">
@@ -106,8 +109,22 @@ export default function LoginPage() {
             <div className="flex-1 h-px bg-white/10"></div>
           </div>
 
-          <form onSubmit={handleLogin} className="flex flex-col gap-5">
-            <div className="flex flex-col gap-2.5">
+          <form onSubmit={handleSignup} className="flex flex-col gap-5">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-white/80" htmlFor="name">Full Name</label>
+              <input 
+                id="name" 
+                type="text" 
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+                disabled={loading}
+                placeholder="John Doe" 
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all font-mono text-sm disabled:opacity-50"
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-white/80" htmlFor="email">Email address</label>
               <input 
                 id="email" 
@@ -117,15 +134,12 @@ export default function LoginPage() {
                 required
                 disabled={loading}
                 placeholder="you@example.com" 
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all font-mono text-sm disabled:opacity-50"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all font-mono text-sm disabled:opacity-50"
               />
             </div>
             
-            <div className="flex flex-col gap-2.5">
-              <div className="flex justify-between items-center">
-                <label className="text-sm font-medium text-white/80" htmlFor="password">Password</label>
-                <Link href="#" className="text-xs font-medium text-amber-500 hover:text-amber-400 transition-colors">Forgot password?</Link>
-              </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-white/80" htmlFor="password">Password</label>
               <input 
                 id="password" 
                 type="password" 
@@ -134,7 +148,7 @@ export default function LoginPage() {
                 required
                 disabled={loading}
                 placeholder="••••••••••••" 
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all font-mono text-lg tracking-widest disabled:opacity-50"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all font-mono text-lg tracking-widest disabled:opacity-50"
               />
             </div>
 
@@ -147,18 +161,18 @@ export default function LoginPage() {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-4 px-4 rounded-xl mt-4 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_25px_-5px_rgba(245,158,11,0.4)] disabled:opacity-70 disabled:pointer-events-none flex justify-center items-center"
+              className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3.5 px-4 rounded-xl mt-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_25px_-5px_rgba(245,158,11,0.4)] disabled:opacity-70 disabled:pointer-events-none flex justify-center items-center"
             >
               {loading ? (
-                <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
               ) : (
-                "Sign In"
+                "Create Account"
               )}
             </button>
           </form>
 
-          <p className="text-center text-sm text-white/40 mt-10">
-            Don&apos;t have an account? <Link href="/signup" className="text-amber-500 hover:text-amber-400 font-bold transition-colors">Sign up</Link>
+          <p className="text-center text-sm text-white/40 mt-8">
+            Already have an account? <Link href="/login" className="text-amber-500 hover:text-amber-400 font-bold transition-colors">Sign in</Link>
           </p>
         </div>
       </div>

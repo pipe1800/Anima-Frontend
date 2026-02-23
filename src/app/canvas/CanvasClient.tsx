@@ -55,13 +55,15 @@ export default function CanvasClient({ agent }: { agent: any }) {
               maxProtocol: 3,
               client: { 
                 id: "webchat", 
-                mode: "webchat", 
-                version: "1.0.0", 
-                platform: navigator.userAgent.substring(0, 50) 
+                displayName: "Anima UI",
+                version: "2.0.0", 
+                platform: navigator.platform || "web",
+                mode: "webchat" 
               },
-              auth: { token: token },
-              role: "operator", // Explicitly state role
-              scopes: ["operator.admin", "operator.read", "operator.write"] 
+              role: "operator",
+              scopes: ["operator.admin"],
+              caps: [],
+              auth: { token: token }
             },
             id: crypto.randomUUID()
           }));

@@ -59,8 +59,10 @@ export default function CanvasClient({ agent }: { agent: any }) {
                 version: "1.0.0", 
                 platform: navigator.userAgent.substring(0, 50) 
               },
-              auth: { token: token },
-              scopes: ["operator.admin", "operator.read", "operator.write"] // Use operator.admin to bypass strict method scope checks
+              auth: { 
+                token: token,
+                scopes: ["operator.admin", "operator.read", "operator.write"] // Scopes belong inside auth
+              }
             },
             id: crypto.randomUUID()
           }));

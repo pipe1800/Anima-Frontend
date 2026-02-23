@@ -47,28 +47,7 @@ export default function CanvasClient({ agent }: { agent: any }) {
           console.log("WebSocket Connected!");
           setStatus("connected");
           
-          ws.send(JSON.stringify({
-            type: "req",
-            method: "connect",
-            params: {
-              minProtocol: 3,
-              maxProtocol: 3,
-              client: { 
-                id: "webchat", 
-                displayName: "Anima UI",
-                version: "2.0.0", 
-                platform: navigator.platform || "web",
-                mode: "webchat" 
-              },
-              role: "operator",
-              scopes: ["operator.admin"],
-              caps: [],
-              auth: { token: token }
-            },
-            id: crypto.randomUUID()
-          }));
-
-          // We do not fetch history here anymore, it's triggered after the connect response
+          // WAIT for connect.challenge event before sending connect frame
         };
 
         ws.onmessage = (event) => {
@@ -78,9 +57,29 @@ export default function CanvasClient({ agent }: { agent: any }) {
 
             // Handle Connect Challenge (If the Gateway requires answering the challenge)
             if (data.type === "event" && data.event === "connect.challenge") {
-              // OpenClaw v3 protocol occasionally sends a challenge, but typically 
-              // the token handshake suffices. We log it here for visibility.
               console.log("Gateway requested a challenge response.", data.payload);
+              
+              // Only send connect after receiving the challenge
+              ws.send(JSON.stringify({
+                type: "req",
+                method: "connect",
+                params: {
+                  minProtocol: 3,
+                  maxProtocol: 3,
+                  client: { 
+                    id: "webchat", 
+                    displayName: "Anima UI",
+                    version: "2.0.0", 
+                    platform: navigator.platform || "web",
+                    mode: "webchat" 
+                  },
+                  role: "operator",
+                  scopes: ["operator.admin"],
+                  caps: [],
+                  auth: { token: token }
+                },
+                id: crypto.randomUUID()
+              }));
             }
 
             // Handle Connect Response

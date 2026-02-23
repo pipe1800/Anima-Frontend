@@ -7,10 +7,8 @@ export default function Home() {
       {/* Navbar Placeholder */}
       <nav className="w-full h-20 flex items-center justify-between px-8 border-b border-white/10 z-50 bg-[#0a0a0a]/80 backdrop-blur-md sticky top-0">
         <div className="flex items-center gap-3">
-          {/* Logo Placeholder - You'll drop your cleaned logo here later */}
-          <div className="w-8 h-8 rounded-md bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center font-bold">
-            A
-          </div>
+          {/* Logo */}
+          <Image src="/anima-logo.svg" alt="Anima Logo" width={32} height={32} className="w-8 h-8 object-contain" />
           <span className="text-xl font-bold tracking-widest text-white/90">ANIMA</span>
         </div>
         <div className="flex gap-6 items-center">

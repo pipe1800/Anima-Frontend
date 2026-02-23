@@ -59,7 +59,8 @@ export default function CanvasClient({ agent }: { agent: any }) {
                 version: "1.0.0", 
                 platform: navigator.userAgent.substring(0, 50) 
               },
-              auth: { token: token }
+              auth: { token: token },
+              scopes: ["operator.read", "operator.write", "chat.read", "chat.write"]
             },
             id: crypto.randomUUID()
           }));

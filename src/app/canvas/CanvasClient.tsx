@@ -47,14 +47,19 @@ export default function CanvasClient({ agent }: { agent: any }) {
           console.log("WebSocket Connected!");
           setStatus("connected");
           
-          // Send Connect Request for Protocol v3
           ws.send(JSON.stringify({
             type: "req",
             method: "connect",
             params: {
               minProtocol: 3,
               maxProtocol: 3,
-              client: { id: "webchat", mode: "webchat" },
+              client: { 
+                id: "webchat", 
+                mode: "webchat", 
+                version: "1.0.0", 
+                platform: navigator.userAgent.substring(0, 100), 
+                name: "Anima UI" 
+              },
               auth: { token: token }
             },
             id: crypto.randomUUID()
@@ -68,20 +73,34 @@ export default function CanvasClient({ agent }: { agent: any }) {
             const data = JSON.parse(event.data);
             console.log("WebSocket Message:", data);
 
+            // Handle Connect Challenge (If the Gateway requires answering the challenge)
+            if (data.type === "event" && data.event === "connect.challenge") {
+              // OpenClaw v3 protocol occasionally sends a challenge, but typically 
+              // the token handshake suffices. We log it here for visibility.
+              console.log("Gateway requested a challenge response.", data.payload);
+            }
+
             // Handle Connect Response
-            if (data.type === "res" && data.method === "connect") {
-              if (data.error) {
-                console.error("Connect failed:", data.error);
-                setStatus("error");
-                return;
+            if (data.type === "res" && data.ok !== undefined) {
+              if (!data.ok) {
+                console.error("Gateway rejected request:", data.error);
+                if (data.error?.message?.includes("invalid connect params")) {
+                  // Wait, don't crash the UI immediately, we log it
+                  return;
+                }
               }
-              // Fetch History after successful connect
-              ws.send(JSON.stringify({
-                type: "req",
-                method: "chat.history",
-                params: { sessionKey: "default", limit: 50 },
-                id: crypto.randomUUID()
-              }));
+
+              // Only fetch history if the request was specifically the connect request
+              // Note: the v3 server might just send 'ok: true' without the method echoed back 
+              // for the 'connect' request in some edge cases.
+              if (data.ok && data.id) {
+                ws.send(JSON.stringify({
+                  type: "req",
+                  method: "chat.history",
+                  params: { sessionKey: "default", limit: 50 },
+                  id: crypto.randomUUID()
+                }));
+              }
             }
             if (data.type === "res" && data.method === "chat.history" && data.result?.messages) {
               const history = data.result.messages.map((m: any) => ({

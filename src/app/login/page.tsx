@@ -1,7 +1,38 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 
 export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const supabase = createClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      setError(signInError.message);
+      setLoading(false);
+    } else {
+      router.push("/dashboard");
+      router.refresh();
+    }
+  };
+
   return (
     <div className="min-h-screen flex bg-[#0a0a0a] text-white font-sans overflow-hidden">
       {/* Left Side - Image Panel */}
@@ -42,14 +73,18 @@ export default function LoginPage() {
             <p className="text-white/50">Log in to your Anima dashboard.</p>
           </div>
 
-          <form className="flex flex-col gap-6">
+          <form onSubmit={handleLogin} className="flex flex-col gap-6">
             <div className="flex flex-col gap-2.5">
               <label className="text-sm font-medium text-white/80" htmlFor="email">Email address</label>
               <input 
                 id="email" 
                 type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={loading}
                 placeholder="you@example.com" 
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all font-mono text-sm"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all font-mono text-sm disabled:opacity-50"
               />
             </div>
             
@@ -61,16 +96,31 @@ export default function LoginPage() {
               <input 
                 id="password" 
                 type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
                 placeholder="••••••••••••" 
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all font-mono text-lg tracking-widest"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all font-mono text-lg tracking-widest disabled:opacity-50"
               />
             </div>
 
+            {error && (
+              <div className="text-red-400 text-sm font-medium bg-red-400/10 border border-red-400/20 px-4 py-3 rounded-lg">
+                {error}
+              </div>
+            )}
+
             <button 
               type="submit" 
-              className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-4 px-4 rounded-xl mt-4 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_25px_-5px_rgba(245,158,11,0.4)]"
+              disabled={loading}
+              className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-4 px-4 rounded-xl mt-4 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_25px_-5px_rgba(245,158,11,0.4)] disabled:opacity-70 disabled:pointer-events-none flex justify-center items-center"
             >
-              Sign In
+              {loading ? (
+                <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+              ) : (
+                "Sign In"
+              )}
             </button>
           </form>
 

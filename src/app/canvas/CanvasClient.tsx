@@ -18,6 +18,7 @@ export default function CanvasClient({ agent }: { agent: any }) {
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [emotion, setEmotion] = useState("idle");
+  const [activeSessionKey, setActiveSessionKey] = useState("agent:main:default");
 
   // Scroll to bottom
   const scrollToBottom = () => {
@@ -74,7 +75,7 @@ export default function CanvasClient({ agent }: { agent: any }) {
                     mode: "webchat" 
                   },
                   role: "operator",
-                  scopes: ["operator.admin"],
+                  scopes: ["operator.admin", "operator.read", "operator.write"],
                   caps: [],
                   auth: { token: token }
                 },
@@ -117,8 +118,8 @@ export default function CanvasClient({ agent }: { agent: any }) {
                 }));
               }
             }
-            if (data.type === "res" && data.method === "chat.history" && data.result?.messages) {
-              const history = data.result.messages.map((m: any) => ({
+            if (data.type === "res" && data.ok && data.payload?.messages) {
+              const history = data.payload.messages.map((m: any) => ({
                 id: m.id || crypto.randomUUID(),
                 role: m.role,
                 content: m.content?.map((c: any) => c.text).join("") || "",
@@ -175,8 +176,6 @@ export default function CanvasClient({ agent }: { agent: any }) {
       if (ws) ws.close();
     };
   }, [agent]);
-
-  const [activeSessionKey, setActiveSessionKey] = useState("agent:main:default");
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -328,3 +327,43 @@ export default function CanvasClient({ agent }: { agent: any }) {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

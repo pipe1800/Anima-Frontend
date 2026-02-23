@@ -26,7 +26,7 @@ export default async function DashboardPage() {
       <nav className="w-full h-16 border-b border-white/10 flex items-center justify-between px-6 bg-[#111] sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <Image src="/anima-logo.svg" alt="Anima Logo" width={24} height={24} />
-          <span className="font-bold tracking-widest text-sm text-white/90">ANIMA <span className="text-amber-500 font-black">//</span> COMMAND</span>
+          <span className="font-bold tracking-widest text-sm text-white/90">ANIMA <span className="text-amber-500 font-black">{'//'}</span> COMMAND</span>
         </div>
         <div className="flex items-center gap-4">
           <span className="text-xs font-mono text-white/40">{user.email}</span>

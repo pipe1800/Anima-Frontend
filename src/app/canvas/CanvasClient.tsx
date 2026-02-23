@@ -93,14 +93,27 @@ export default function CanvasClient({ agent }: { agent: any }) {
                 }
               }
 
-              // Only fetch history if the request was specifically the connect request
-              // Note: the v3 server might just send 'ok: true' without the method echoed back 
-              // for the 'connect' request in some edge cases.
-              if (data.ok && data.id) {
+              // Extract canonical session key from connect response snapshot
+              if (data.ok && data.payload?.snapshot?.sessionDefaults?.mainSessionKey) {
+                const canonicalSessionKey = data.payload.snapshot.sessionDefaults.mainSessionKey;
+                console.log("Resolved canonical session key:", canonicalSessionKey);
+                setActiveSessionKey(canonicalSessionKey);
+                
+                // Fetch History using the correct canonical session key
                 ws.send(JSON.stringify({
                   type: "req",
                   method: "chat.history",
-                  params: { sessionKey: "default", limit: 50 },
+                  params: { sessionKey: canonicalSessionKey, limit: 50 },
+                  id: crypto.randomUUID()
+                }));
+              } else if (data.ok && data.id) {
+                // Fallback to "agent:main:default" if snapshot is missing
+                console.log("No mainSessionKey in snapshot, falling back to agent:main:default");
+                setActiveSessionKey("agent:main:default");
+                ws.send(JSON.stringify({
+                  type: "req",
+                  method: "chat.history",
+                  params: { sessionKey: "agent:main:default", limit: 50 },
                   id: crypto.randomUUID()
                 }));
               }
@@ -164,6 +177,8 @@ export default function CanvasClient({ agent }: { agent: any }) {
     };
   }, [agent]);
 
+  const [activeSessionKey, setActiveSessionKey] = useState("agent:main:default");
+
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || status !== "connected" || !wsRef.current) return;
@@ -176,7 +191,7 @@ export default function CanvasClient({ agent }: { agent: any }) {
       type: "req",
       method: "chat.send",
       params: {
-        sessionKey: "default",
+        sessionKey: activeSessionKey,
         message: input,
         deliver: false
       },

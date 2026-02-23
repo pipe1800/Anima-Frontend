@@ -39,10 +39,12 @@ export default function CanvasClient({ agent }: { agent: any }) {
         wsUrl.searchParams.set("token", token);
         wsUrl.searchParams.set("clientId", "webchat");
 
+        console.log("Connecting to:", wsUrl.toString().replace(token, "***"));
         ws = new WebSocket(wsUrl.toString());
         wsRef.current = ws;
 
         ws.onopen = () => {
+          console.log("WebSocket Connected!");
           setStatus("connected");
           
           // Send Connect Request for Protocol v3
@@ -58,20 +60,29 @@ export default function CanvasClient({ agent }: { agent: any }) {
             id: crypto.randomUUID()
           }));
 
-          // Optional: Fetch History
-          ws.send(JSON.stringify({
-            type: "req",
-            method: "chat.history",
-            params: { sessionKey: "default", limit: 50 },
-            id: crypto.randomUUID()
-          }));
+          // We do not fetch history here anymore, it's triggered after the connect response
         };
 
         ws.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
+            console.log("WebSocket Message:", data);
 
-            // Handle History Response
+            // Handle Connect Response
+            if (data.type === "res" && data.method === "connect") {
+              if (data.error) {
+                console.error("Connect failed:", data.error);
+                setStatus("error");
+                return;
+              }
+              // Fetch History after successful connect
+              ws.send(JSON.stringify({
+                type: "req",
+                method: "chat.history",
+                params: { sessionKey: "default", limit: 50 },
+                id: crypto.randomUUID()
+              }));
+            }
             if (data.type === "res" && data.method === "chat.history" && data.result?.messages) {
               const history = data.result.messages.map((m: any) => ({
                 id: m.id || crypto.randomUUID(),
@@ -109,8 +120,14 @@ export default function CanvasClient({ agent }: { agent: any }) {
           }
         };
 
-        ws.onclose = () => setStatus("disconnected");
-        ws.onerror = () => setStatus("error");
+        ws.onclose = (e) => {
+          console.log("WebSocket Closed:", e.code, e.reason);
+          setStatus("disconnected");
+        };
+        ws.onerror = (e) => {
+          console.error("WebSocket Error:", e);
+          setStatus("error");
+        };
 
       } catch (err) {
         console.error("Setup Error", err);

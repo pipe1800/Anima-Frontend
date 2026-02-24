@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { decryptToken } from "@/utils/encryption";
+import { loadOrCreateDeviceIdentity, signDevicePayload, buildDeviceAuthPayload } from "@/utils/device-identity";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -33,6 +34,7 @@ export default function CanvasClient({ agent }: { agent: any }) {
       try {
         setStatus("decrypting");
         const token = await decryptToken(agent.gateway_token_encrypted);
+        const deviceIdentity = await loadOrCreateDeviceIdentity();
         
         setStatus("connecting");
         const wsUrl = new URL(agent.gateway_url);
@@ -51,7 +53,7 @@ export default function CanvasClient({ agent }: { agent: any }) {
           // WAIT for connect.challenge event before sending connect frame
         };
 
-        ws.onmessage = (event) => {
+        ws.onmessage = async (event) => {
           try {
             const data = JSON.parse(event.data);
             console.log("WebSocket Message:", data);
@@ -60,6 +62,28 @@ export default function CanvasClient({ agent }: { agent: any }) {
             if (data.type === "event" && data.event === "connect.challenge") {
               console.log("Gateway requested a challenge response.", data.payload);
               
+              const nonce = data.payload?.nonce;
+              if (!nonce) return;
+
+              const signedAtMs = Date.now();
+              const scopes = ["operator.admin", "operator.read", "operator.write"];
+              const clientId = "webchat";
+              const clientMode = "webchat";
+              const role = "operator";
+
+              const payloadString = buildDeviceAuthPayload({
+                deviceId: deviceIdentity.deviceId,
+                clientId,
+                clientMode,
+                role,
+                scopes,
+                signedAtMs,
+                token,
+                nonce,
+              });
+
+              const signature = await signDevicePayload(deviceIdentity.privateKey, payloadString);
+
               // Only send connect after receiving the challenge
               ws.send(JSON.stringify({
                 type: "req",
@@ -68,16 +92,23 @@ export default function CanvasClient({ agent }: { agent: any }) {
                   minProtocol: 3,
                   maxProtocol: 3,
                   client: { 
-                    id: "webchat", 
+                    id: clientId, 
                     displayName: "Anima UI",
                     version: "2.0.0", 
                     platform: navigator.platform || "web",
-                    mode: "webchat" 
+                    mode: clientMode 
                   },
-                  role: "operator",
-                  scopes: ["operator.admin", "operator.read", "operator.write"],
+                  role,
+                  scopes,
                   caps: [],
-                  auth: { token: token }
+                  auth: { token: token },
+                  device: {
+                    id: deviceIdentity.deviceId,
+                    publicKey: deviceIdentity.publicKey,
+                    signature,
+                    signedAt: signedAtMs,
+                    nonce
+                  }
                 },
                 id: crypto.randomUUID()
               }));

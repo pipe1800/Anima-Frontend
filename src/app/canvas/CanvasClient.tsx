@@ -115,15 +115,7 @@ export default function CanvasClient({ agent }: { agent: any }) {
             }
 
             // Handle Connect Response
-            if (data.type === "res" && data.ok !== undefined) {
-              if (!data.ok) {
-                console.error("Gateway rejected request:", data.error);
-                if (data.error?.message?.includes("invalid connect params")) {
-                  // Wait, don't crash the UI immediately, we log it
-                  return;
-                }
-              }
-
+            if (data.type === "res" && data.payload?.type === "hello-ok") {
               // Extract canonical session key from connect response snapshot
               if (data.ok && data.payload?.snapshot?.sessionDefaults?.mainSessionKey) {
                 const canonicalSessionKey = data.payload.snapshot.sessionDefaults.mainSessionKey;
@@ -137,7 +129,7 @@ export default function CanvasClient({ agent }: { agent: any }) {
                   params: { sessionKey: canonicalSessionKey, limit: 50 },
                   id: crypto.randomUUID()
                 }));
-              } else if (data.ok && data.id) {
+              } else if (data.ok) {
                 // Fallback to "agent:main:default" if snapshot is missing
                 console.log("No mainSessionKey in snapshot, falling back to agent:main:default");
                 setActiveSessionKey("agent:main:default");
@@ -148,6 +140,8 @@ export default function CanvasClient({ agent }: { agent: any }) {
                   id: crypto.randomUUID()
                 }));
               }
+            } else if (data.type === "res" && data.ok === false) {
+              console.error("Gateway rejected request:", data.error);
             }
             if (data.type === "res" && data.ok && data.payload?.messages) {
               const history = data.payload.messages.map((m: any) => ({
